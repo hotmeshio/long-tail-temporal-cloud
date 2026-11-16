@@ -28,7 +28,7 @@ async function main(): Promise<void> {
     const { worker, connection } = await createWorker(config);
     running = worker.run();
     closers.unshift(async () => { worker.shutdown(); await running; await connection.close(); });
-    log(LOG_EVENTS.WORKER_STARTED, { ltUrl: config.ltUrl, namespace: config.temporal.namespace });
+    log(LOG_EVENTS.WORKER_STARTED, { namespace: config.temporal.namespace });
   }
 
   // 3. Bounded shutdown

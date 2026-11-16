@@ -35,7 +35,6 @@ export function fabricationKey(orderId: string): string {
 export const LOG_EVENTS = {
   API_STARTED: 'cloud.api.started',
   WORKER_STARTED: 'cloud.worker.started',
-  WORKER_KEY_ISSUED: 'cloud.worker.key_issued',
   SHUTDOWN: 'cloud.shutdown',
   FATAL: 'cloud.fatal',
 } as const;
