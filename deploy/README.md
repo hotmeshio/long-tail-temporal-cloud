@@ -65,6 +65,14 @@ Sign in at `https://<subdomain>.<zone>` as `superadmin` with the generated passw
 aws secretsmanager get-secret-value --secret-id OnPremCloud/AdminPassword --query SecretString --output text
 ```
 
+MCP clients connect at `https://<subdomain>.<zone>/mcp` and sign in through the same page. In Claude Code:
+
+```bash
+claude mcp add --transport http cloud https://cloud.example.com/mcp
+```
+
+Then `/mcp`, choose the server, and authenticate.
+
 Then run one order through the handoff:
 
 ```bash

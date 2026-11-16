@@ -92,6 +92,11 @@ describe('ComputeStack', () => {
     ]);
   });
 
+  it('offers MCP sign-in at the public address, on the API only', () => {
+    expect(envOf('api').LT_OAUTH_ISSUER).toBe(`https://${TEST_SUBDOMAIN}.${TEST_ZONE}`);
+    expect(envOf('worker')).not.toHaveProperty('LT_OAUTH_ISSUER');
+  });
+
   it('points the worker at the API inside the VPC with only the secrets it uses', () => {
     expect(envOf('worker')).toMatchObject({
       APP_ROLE: 'worker',

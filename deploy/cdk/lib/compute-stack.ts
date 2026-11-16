@@ -175,6 +175,8 @@ export class ComputeStack extends cdk.Stack {
         POSTGRES_DB: config.dbName,
         NATS_URL: config.natsUrl,
         NATS_WS_TARGET: config.natsWsUrl,
+        // OAuth sign-in for MCP clients at /mcp.
+        LT_OAUTH_ISSUER: `https://${config.domainName}`,
       },
       secrets: {
         ...temporalSecrets,
