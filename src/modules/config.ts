@@ -34,7 +34,6 @@ export interface AppConfig {
   temporal: TemporalConfig;
   /** Where the worker reaches the Long Tail API. */
   ltUrl: string;
-  ltApiKey?: string;
   admin: { user: string; password?: string; email?: string };
   jwtSecret?: string;
   database: { connectionString?: string; host: string; port: number; user: string; password: string; database: string };
@@ -57,7 +56,6 @@ export function loadConfig(env: Env = process.env): AppConfig {
       uiUrl: env.TEMPORAL_UI_URL || undefined,
     },
     ltUrl: envStr(env, 'LT_URL', `http://localhost:${port}`).replace(/\/+$/, ''),
-    ltApiKey: env.LT_API_KEY || undefined,
     admin: {
       user: envStr(env, 'LT_ADMIN_USER', 'superadmin'),
       password: env.LT_ADMIN_PASSWORD || undefined,

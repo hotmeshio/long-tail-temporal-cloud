@@ -1,32 +1,29 @@
 import { join } from 'path';
 
 import { NativeConnection, Worker } from '@temporalio/worker';
-import { longTailActivities, longTailTools } from '@hotmeshio/long-tail-temporal/worker';
+import { longTailActivities, longTailTools, type LongTailActivityConfig } from '@hotmeshio/long-tail-temporal/worker';
 
 import * as activities from '../activities';
+import { WORKFLOW_BOT, workflowConnection } from '../config/workflow-bot';
 import type { AppConfig } from '../modules/config';
-import { BOT, ROLE, ROLE_TYPE, TASK_QUEUE } from '../modules/constants';
+import { APP_ROLE, TASK_QUEUE } from '../modules/constants';
 import { issueBotKey } from '../services/bot-key';
 
-/** The key the workflow side calls Long Tail with: LT_API_KEY, or one minted by admin sign-in for a local stack. */
-export async function resolveApiKey(config: AppConfig): Promise<string> {
-  if (config.ltApiKey) return config.ltApiKey;
-  if (!config.admin.password) {
-    throw new Error('Set LT_API_KEY, or LT_ADMIN_USER and LT_ADMIN_PASSWORD so a local stack mints one');
-  }
-  const issued = await issueBotKey(
-    config.ltUrl,
-    { username: config.admin.user, password: config.admin.password },
-    { name: BOT.WORKFLOWS, description: 'Opens and closes waits for the Temporal workflows', roles: [{ role: ROLE.FABRICATION, type: ROLE_TYPE.MEMBER }] },
-  );
-  return issued.apiKey;
+/**
+ * How the workflow side reaches Long Tail. Beside the API it calls Long Tail in
+ * process. A worker of its own calls the API with a key it issues at boot.
+ */
+export async function connectLongTail(config: AppConfig): Promise<LongTailActivityConfig> {
+  if (config.appRole === APP_ROLE.BOTH) return workflowConnection();
+  if (!config.admin.password) throw new Error('LT_ADMIN_PASSWORD is required when APP_ROLE=worker');
+  const { apiKey } = await issueBotKey(config.ltUrl, { username: config.admin.user, password: config.admin.password }, WORKFLOW_BOT);
+  return { url: config.ltUrl, apiKey };
 }
 
 /** The Temporal worker: runs the workflows, their activities and the Long Tail activities. */
 export async function createWorker(config: AppConfig): Promise<{ worker: Worker; connection: NativeConnection }> {
-  // 1. Key for the Long Tail API
-  const apiKey = await resolveApiKey(config);
-  const longTail = { url: config.ltUrl, apiKey };
+  // 1. Long Tail
+  const longTail = await connectLongTail(config);
 
   // 2. Temporal connection; an API key means Temporal Cloud over TLS
   const { address, namespace, apiKey: temporalKey } = config.temporal;

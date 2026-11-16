@@ -240,7 +240,7 @@ export class ComputeStack extends cdk.Stack {
 
     bucket.grantReadWrite(workerTaskDef.taskRole);
 
-    // The worker mints its Long Tail key at boot, which retires the previous
+    // The worker issues its Long Tail key at boot, which retires the previous
     // one, so a deploy stops the old task before starting the new one.
     const workerService = new ecs.FargateService(this, 'WorkerService', {
       cluster,

@@ -17,8 +17,8 @@
     "smoke": "tsx scripts/smoke-handoff.ts"
   },
   "dependencies": {
-    "@hotmeshio/long-tail": "^0.37.1",
-    "@hotmeshio/long-tail-temporal": "^0.5.1",
+    "@hotmeshio/long-tail": "^0.38.0",
+    "@hotmeshio/long-tail-temporal": "^0.5.2",
     "@temporalio/activity": "^1.25.0",
     "@temporalio/client": "^1.25.0",
     "@temporalio/common": "^1.25.0",
