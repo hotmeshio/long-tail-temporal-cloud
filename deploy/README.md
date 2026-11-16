@@ -87,6 +87,14 @@ Create the deploy role once. The stack uses the GitHub OIDC provider the account
 npx cdk deploy OnPremCloud-GithubOidc -c githubOwner=<owner> -c githubRepo=<repo>
 ```
 
+The role trusts tokens whose subject starts with `repo:<owner>/<repo>`. A repository with immutable subject claims issues a prefix that carries the owner and repository ids. Read it, and pass it when it differs:
+
+```bash
+gh api repos/<owner>/<repo>/actions/oidc/customization/sub --jq .sub_claim_prefix
+npx cdk deploy OnPremCloud-GithubOidc -c githubOwner=<owner> -c githubRepo=<repo> \
+  -c githubSubjectPrefix='repo:<owner>@<owner-id>/<repo>@<repo-id>'
+```
+
 Set these repository variables:
 
 | Variable | Value |

@@ -56,8 +56,9 @@ export function defineStacks(app: cdk.App, env: cdk.Environment): DeployStacks {
   // 5. GitHub Actions deploy role
   const githubOwner = app.node.tryGetContext('githubOwner');
   const githubRepo = app.node.tryGetContext('githubRepo');
+  const githubSubjectPrefix = app.node.tryGetContext('githubSubjectPrefix');
   const githubOidc = githubOwner && githubRepo
-    ? new GithubOidcStack(app, config.stackName('GithubOidc'), { env, config, githubOwner, githubRepo })
+    ? new GithubOidcStack(app, config.stackName('GithubOidc'), { env, config, githubOwner, githubRepo, githubSubjectPrefix })
     : undefined;
 
   return { config, network, data, dns, compute, githubOidc };

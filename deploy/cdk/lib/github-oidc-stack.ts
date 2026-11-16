@@ -10,6 +10,8 @@ export interface GithubOidcStackProps extends cdk.StackProps {
   config: DeployConfig;
   githubOwner: string;
   githubRepo: string;
+  /** The repo's OIDC subject prefix when it differs from `repo:<owner>/<repo>`. */
+  githubSubjectPrefix?: string;
 }
 
 /**
@@ -23,6 +25,7 @@ export class GithubOidcStack extends cdk.Stack {
     super(scope, id, props);
 
     const { config, githubOwner, githubRepo } = props;
+    const subjectPrefix = props.githubSubjectPrefix || `repo:${githubOwner}/${githubRepo}`;
 
     const provider = iam.OpenIdConnectProvider.fromOpenIdConnectProviderArn(
       this,
@@ -33,7 +36,7 @@ export class GithubOidcStack extends cdk.Stack {
     this.deployRole = new iam.Role(this, 'GithubActionsRole', {
       roleName: config.deployRoleName,
       assumedBy: new iam.OpenIdConnectPrincipal(provider, {
-        StringLike: { [`${GITHUB_OIDC_HOST}:sub`]: `repo:${githubOwner}/${githubRepo}:ref:refs/tags/v*` },
+        StringLike: { [`${GITHUB_OIDC_HOST}:sub`]: `${subjectPrefix}:ref:refs/tags/v*` },
         StringEquals: { [`${GITHUB_OIDC_HOST}:aud`]: OIDC_AUDIENCE },
       }),
       // Broad on purpose for a single-purpose account. In a shared account,
