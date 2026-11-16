@@ -1,6 +1,8 @@
 import { defineStacks } from '../lib/stacks';
 import { createApp, synthStacks, templateOf, TEST_ENV, TEST_GITHUB } from './synth';
 
+const TEST_SUBJECT_PREFIX = 'repo:acme@1001/cloud@2002';
+
 describe('GithubOidcStack', () => {
   const template = templateOf(synthStacks().githubOidc!);
 
@@ -13,6 +15,18 @@ describe('GithubOidcStack', () => {
         'token.actions.githubusercontent.com:sub': `repo:${TEST_GITHUB.owner}/${TEST_GITHUB.repo}:ref:refs/tags/v*`,
       },
       StringEquals: { 'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com' },
+    });
+  });
+
+  it('trusts the subject prefix the repository issues when one is given', () => {
+    const stacks = defineStacks(
+      createApp({ githubOwner: TEST_GITHUB.owner, githubRepo: TEST_GITHUB.repo, githubSubjectPrefix: TEST_SUBJECT_PREFIX }),
+      TEST_ENV,
+    );
+    const [role] = Object.values(templateOf(stacks.githubOidc!).findResources('AWS::IAM::Role'));
+    const [statement] = role.Properties.AssumeRolePolicyDocument.Statement;
+    expect(statement.Condition.StringLike).toEqual({
+      'token.actions.githubusercontent.com:sub': `${TEST_SUBJECT_PREFIX}:ref:refs/tags/v*`,
     });
   });
 
