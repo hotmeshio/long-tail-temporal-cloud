@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:integration": "vitest run --config tests/integration/vitest.config.mts",
     "typecheck": "tsc --noEmit",
-    "site-key": "tsx scripts/mint-site-key.ts"
+    "site-key": "tsx scripts/mint-site-key.ts",
+    "smoke": "tsx scripts/smoke-handoff.ts"
   },
   "dependencies": {
     "@hotmeshio/long-tail": "^0.37.1",

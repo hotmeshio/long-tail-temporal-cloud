@@ -1,0 +1,68 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  app:
+    name: Typecheck and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  cdk:
+    name: CDK typecheck and tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deploy/cdk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: deploy/cdk/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    env:
+      # Signed links are fetched from the runner, where MinIO is on localhost.
+      LT_S3_PUBLIC_ENDPOINT: http://localhost:9702
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Start the stack with its own Temporal server
+        run: docker compose up -d --build
+
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:3600/health && exit 0
+            sleep 5
+          done
+          exit 1
+
+      - run: npm run test:integration
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs app temporal --tail 100

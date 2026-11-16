@@ -85,6 +85,14 @@ LT_URL=https://cloud.example.com LT_ADMIN_USER=superadmin LT_ADMIN_PASSWORD=... 
 
 The script prints `CLOUD_URL`, `CLOUD_API_KEY` and `CLOUD_BOT_ID` for the site's environment. Running it again issues a new key and revokes the earlier one.
 
+## Deploy to AWS
+
+`deploy/cdk` runs this cloud in its own VPC on Fargate, with Postgres on RDS, an assets bucket and the Temporal API key in Secrets Manager. A version tag deploys it from GitHub Actions and runs one order through the handoff as a check. See [deploy/README.md](deploy/README.md).
+
+```bash
+LT_URL=https://cloud.example.com LT_ADMIN_PASSWORD=... npm run smoke
+```
+
 ## Layout
 
 ```
@@ -97,7 +105,10 @@ src/
   config/                  roles and worker registration
   modules/                 config (env) and constants
   services/bot-key.ts      bot accounts and keys
+  services/handoff-smoke.ts one order through the handoff, as a check
 scripts/mint-site-key.ts   the key a site calls with
+scripts/smoke-handoff.ts   npm run smoke
+deploy/cdk/                AWS stacks
 ```
 
 `APP_ROLE=api` serves the dashboard and API, `APP_ROLE=worker` runs the Temporal worker, and `both` runs the two in one process for local work.

@@ -21,8 +21,8 @@ export type OrderStatus = typeof ORDER_STATUS[keyof typeof ORDER_STATUS];
 export const ASSET = { MODEL: 'model', TICKET: 'ticket' } as const;
 export const CONTENT_TYPE = { GCODE: 'text/x.gcode', JSON: 'application/json' } as const;
 
-/** The workflow side's bot and the factory site's bot. */
-export const BOT = { WORKFLOWS: 'temporal-workflows', SITE: 'fabrication-site' } as const;
+/** The workflow side's bot, the factory site's bot, and the bot a smoke run resolves with. */
+export const BOT = { WORKFLOWS: 'temporal-workflows', SITE: 'fabrication-site', SMOKE: 'handoff-smoke' } as const;
 
 export const DEFAULT_WAIT_TIMEOUT = '7d';
 export const DEFAULT_QUANTITY = 1;

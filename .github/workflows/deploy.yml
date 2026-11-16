@@ -1,0 +1,97 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency: deploy
+
+env:
+  LT_HOSTED_ZONE_DOMAIN: ${{ vars.LT_HOSTED_ZONE_DOMAIN }}
+  LT_SUBDOMAIN: ${{ vars.LT_SUBDOMAIN }}
+  TEMPORAL_ADDRESS: ${{ vars.TEMPORAL_ADDRESS }}
+  TEMPORAL_NAMESPACE: ${{ vars.TEMPORAL_NAMESPACE }}
+
+jobs:
+  test:
+    name: Pre-deploy tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm ci && npm run build && npm test
+        working-directory: deploy/cdk
+
+  deploy:
+    name: Deploy to AWS
+    needs: test
+    # ARM runner: the image is built for the ARM64 Fargate tasks.
+    runs-on: ubuntu-24.04-arm
+    defaults:
+      run:
+        working-directory: deploy/cdk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: deploy/cdk/package-lock.json
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - run: npm ci
+      - run: npx cdk diff --all || true
+      - run: npx cdk deploy --all --require-approval never
+
+  smoke:
+    name: Post-deploy smoke run
+    needs: deploy
+    runs-on: ubuntu-latest
+    env:
+      LT_URL: https://${{ vars.LT_SUBDOMAIN }}.${{ vars.LT_HOSTED_ZONE_DOMAIN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf "$LT_URL/health" && exit 0
+            sleep 5
+          done
+          exit 1
+
+      - name: Read the admin password
+        run: |
+          password=$(aws secretsmanager get-secret-value --secret-id OnPremCloud/AdminPassword --query SecretString --output text)
+          echo "::add-mask::$password"
+          echo "LT_ADMIN_PASSWORD=$password" >> "$GITHUB_ENV"
+
+      - name: Run one order through the handoff
+        run: npm run smoke
