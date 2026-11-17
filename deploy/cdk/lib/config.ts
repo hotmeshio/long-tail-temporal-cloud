@@ -71,8 +71,6 @@ export function loadConfig(app: cdk.App) {
     secretName: (name: string) => `${projectName}/${name}`,
     bucketName: (account: string, region: string) => `${projectSlug}-assets-${account}-${region}`,
 
-    /** Where the worker reaches the API, inside the VPC. */
-    apiUrl: `http://api.${serviceDiscoveryNamespace}:${CONTAINER_PORT}`,
     natsUrl: `nats://nats.${serviceDiscoveryNamespace}:${NATS_PORT}`,
     natsWsUrl: `ws://nats.${serviceDiscoveryNamespace}:${NATS_WS_PORT}`,
     deployRoleName: `${projectName}-GithubActionsDeployRole`,

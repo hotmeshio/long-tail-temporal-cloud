@@ -12,7 +12,7 @@ The CDK app in `deploy/cdk` runs this cloud in its own VPC: the API and dashboar
 | `OnPremCloud-Compute` | ECS cluster with three ARM64 Fargate services (`api`, `worker`, `nats`), the load balancer (80 redirects to 443), a web ACL that throttles sign-in attempts, and the alias record |
 | `OnPremCloud-GithubOidc` | The role GitHub Actions assumes to deploy, limited to version tags of one repository |
 
-Tasks run in the public subnets with public addresses for their outbound calls to Temporal Cloud, ECR, Secrets Manager and S3. The API accepts traffic from the load balancer and the worker; the worker accepts none; Postgres and NATS accept the API.
+Tasks run in the public subnets with public addresses for their outbound calls to Temporal Cloud, ECR, Secrets Manager and S3. The API accepts traffic from the load balancer; the worker accepts none; Postgres and NATS accept the API and the worker.
 
 ## Where each secret lives
 
@@ -23,7 +23,6 @@ Tasks run in the public subnets with public addresses for their outbound calls t
 | JWT signing key | `.env` | | `OnPremCloud/JwtSigningKey`, generated |
 | NATS token | compose default | | `OnPremCloud/NatsToken`, generated |
 | Database credentials | compose default | | `OnPremCloud/Database`, generated |
-| Worker's Long Tail key | minted at boot | | minted at boot by signing in as the admin |
 | Site key | `npm run site-key` | | held by the site |
 
 ECS injects the secrets into the tasks at start. GitHub holds one role ARN and plain settings as repository variables, and reaches AWS through OIDC.

@@ -49,13 +49,13 @@ export class NetworkStack extends cdk.Stack {
       description: 'API tasks',
     });
     this.appSecurityGroup.connections.allowFrom(this.albSecurityGroup, ec2.Port.tcp(CONTAINER_PORT), 'Load balancer to API');
-    this.appSecurityGroup.connections.allowFrom(this.workerSecurityGroup, ec2.Port.tcp(CONTAINER_PORT), 'Worker to API');
 
     this.natsSecurityGroup = new ec2.SecurityGroup(this, 'NatsSecurityGroup', {
       vpc: this.vpc,
       description: 'NATS event bus',
     });
     this.natsSecurityGroup.connections.allowFrom(this.appSecurityGroup, ec2.Port.tcp(NATS_PORT), 'API to NATS');
+    this.natsSecurityGroup.connections.allowFrom(this.workerSecurityGroup, ec2.Port.tcp(NATS_PORT), 'Worker to NATS');
     this.natsSecurityGroup.connections.allowFrom(this.appSecurityGroup, ec2.Port.tcp(NATS_WS_PORT), 'API proxy to NATS WebSocket');
 
     this.dbSecurityGroup = new ec2.SecurityGroup(this, 'DbSecurityGroup', {
@@ -63,5 +63,6 @@ export class NetworkStack extends cdk.Stack {
       description: 'Postgres',
     });
     this.dbSecurityGroup.connections.allowFrom(this.appSecurityGroup, ec2.Port.tcp(POSTGRES_PORT), 'API to Postgres');
+    this.dbSecurityGroup.connections.allowFrom(this.workerSecurityGroup, ec2.Port.tcp(POSTGRES_PORT), 'Worker to Postgres');
   }
 }

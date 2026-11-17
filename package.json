@@ -1,11 +1,13 @@
 {
   "name": "long-tail-temporal-cloud",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Long Tail on Temporal Cloud: a workflow advertises fabrication work a factory site pulls, does and resolves.",
   "license": "MIT",
   "main": "build/index.js",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.build.json",

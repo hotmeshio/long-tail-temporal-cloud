@@ -32,8 +32,6 @@ export interface AppConfig {
   appRole: AppRole;
   port: number;
   temporal: TemporalConfig;
-  /** Where the worker reaches the Long Tail API. */
-  ltUrl: string;
   admin: { user: string; password?: string; email?: string };
   jwtSecret?: string;
   database: { connectionString?: string; host: string; port: number; user: string; password: string; database: string };
@@ -45,17 +43,15 @@ export function loadConfig(env: Env = process.env): AppConfig {
   if (!Object.values(APP_ROLE).includes(appRole)) {
     throw new Error(`APP_ROLE must be one of ${Object.values(APP_ROLE).join(', ')}, got "${appRole}"`);
   }
-  const port = envInt(env, 'PORT', 3000);
   return {
     appRole,
-    port,
+    port: envInt(env, 'PORT', 3000),
     temporal: {
       address: envRequired(env, 'TEMPORAL_ADDRESS'),
       namespace: envStr(env, 'TEMPORAL_NAMESPACE', 'default'),
       apiKey: env.TEMPORAL_API_KEY || undefined,
       uiUrl: env.TEMPORAL_UI_URL || undefined,
     },
-    ltUrl: envStr(env, 'LT_URL', `http://localhost:${port}`).replace(/\/+$/, ''),
     admin: {
       user: envStr(env, 'LT_ADMIN_USER', 'superadmin'),
       password: env.LT_ADMIN_PASSWORD || undefined,

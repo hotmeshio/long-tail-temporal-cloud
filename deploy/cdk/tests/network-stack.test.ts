@@ -34,7 +34,8 @@ describe('NetworkStack', () => {
       'API to NATS:4222',
       'API to Postgres:5432',
       'Load balancer to API:3000',
-      'Worker to API:3000',
+      'Worker to NATS:4222',
+      'Worker to Postgres:5432',
     ]);
   });
 

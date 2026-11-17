@@ -1,7 +1,6 @@
-const { connect, create, issueBotKey, workflowConnection } = vi.hoisted(() => ({
+const { connect, create, workflowConnection } = vi.hoisted(() => ({
   connect: vi.fn(async (options: unknown) => ({ options })),
   create: vi.fn(async (options: unknown) => ({ options })),
-  issueBotKey: vi.fn(),
   workflowConnection: vi.fn(),
 }));
 vi.mock('@temporalio/worker', () => ({ NativeConnection: { connect }, Worker: { create } }));
@@ -10,40 +9,19 @@ vi.mock('@hotmeshio/long-tail-temporal/worker', () => ({
   longTailTools: (c: unknown) => ({ ltTool: c }),
 }));
 vi.mock('@hotmeshio/long-tail', () => ({ getStorageBackend: vi.fn() }));
-vi.mock('../../../src/services/bot-key', () => ({ issueBotKey }));
-vi.mock('../../../src/config/workflow-bot', () => ({ WORKFLOW_BOT: { name: 'temporal-workflows' }, workflowConnection }));
+vi.mock('../../../src/config/workflow-bot', () => ({ workflowConnection }));
 
 import { APP_ROLE, TASK_QUEUE } from '../../../src/modules/constants';
-import { connectLongTail, createWorker } from '../../../src/worker';
+import { createWorker } from '../../../src/worker';
 import { testConfig } from '../../helpers/config';
 
 type Options = Record<string, any>;
 
 const IN_PROCESS = { client: { name: 'in-process' } };
-const WORKER = { APP_ROLE: APP_ROLE.WORKER, LT_ADMIN_PASSWORD: 'pw' };
 
 beforeEach(() => {
   vi.clearAllMocks();
   workflowConnection.mockResolvedValue(IN_PROCESS);
-  issueBotKey.mockResolvedValue({ botId: 'b1', apiKey: 'lt_bot_issued' });
-});
-
-describe('connectLongTail', () => {
-  it('calls Long Tail in process when the API runs beside the worker', async () => {
-    expect(await connectLongTail(testConfig({ LT_ADMIN_PASSWORD: 'pw' }))).toBe(IN_PROCESS);
-    expect(issueBotKey).not.toHaveBeenCalled();
-  });
-
-  it('issues a key for the workflow bot when the worker runs on its own', async () => {
-    expect(await connectLongTail(testConfig(WORKER))).toEqual({ url: 'http://lt.test', apiKey: 'lt_bot_issued' });
-    expect(issueBotKey).toHaveBeenCalledWith('http://lt.test', { username: 'superadmin', password: 'pw' }, { name: 'temporal-workflows' });
-    expect(workflowConnection).not.toHaveBeenCalled();
-  });
-
-  it('throws when a worker on its own has no admin password', async () => {
-    await expect(connectLongTail(testConfig({ APP_ROLE: APP_ROLE.WORKER }))).rejects.toThrow('LT_ADMIN_PASSWORD is required');
-    expect(issueBotKey).not.toHaveBeenCalled();
-  });
 });
 
 describe('createWorker', () => {
@@ -68,11 +46,11 @@ describe('createWorker', () => {
     expect(options.activities.ltTool).toBe(IN_PROCESS);
   });
 
-  it('registers the Long Tail activities over HTTP for a worker on its own', async () => {
-    await createWorker(testConfig(WORKER));
+  it('calls Long Tail in process for a worker on its own, with no admin password', async () => {
+    await createWorker(testConfig({ APP_ROLE: APP_ROLE.WORKER }));
     const options = create.mock.calls[0][0] as Options;
-    expect(options.activities.ltOpen).toEqual({ url: 'http://lt.test', apiKey: 'lt_bot_issued' });
-    expect(options.activities.ltTool).toEqual({ url: 'http://lt.test', apiKey: 'lt_bot_issued' });
+    expect(options.activities.ltOpen).toBe(IN_PROCESS);
+    expect(options.activities.ltTool).toBe(IN_PROCESS);
   });
 
   it('does not connect to Temporal when Long Tail cannot be reached', async () => {
