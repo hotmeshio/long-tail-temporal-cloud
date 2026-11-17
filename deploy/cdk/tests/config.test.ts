@@ -25,7 +25,6 @@ describe('loadConfig', () => {
 
   it('addresses the API and NATS through the private namespace', () => {
     const config = loadConfig(createApp());
-    expect(config.apiUrl).toBe(`http://api.onpremcloud.local:${CONTAINER_PORT}`);
     expect(config.natsUrl).toBe('nats://nats.onpremcloud.local:4222');
     expect(config.natsWsUrl).toBe('ws://nats.onpremcloud.local:9222');
   });

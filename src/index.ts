@@ -1,6 +1,6 @@
 try { require('dotenv/config'); } catch { /* env comes from the platform */ }
 
-import { startApi } from './api';
+import { startLongTail } from './api';
 import { loadConfig } from './modules/config';
 import { APP_ROLE, LOG_EVENTS, type LogEvent } from './modules/constants';
 import { createWorker } from './worker';
@@ -15,10 +15,10 @@ async function main(): Promise<void> {
   const config = loadConfig();
   const closers: Array<() => Promise<unknown> | unknown> = [];
 
-  // 1. API and dashboard
+  // 1. Long Tail; the API and dashboard are served unless this is a worker
+  const lt = await startLongTail(config);
+  closers.push(() => lt.shutdown());
   if (config.appRole !== APP_ROLE.WORKER) {
-    const lt = await startApi(config);
-    closers.push(() => lt.shutdown());
     log(LOG_EVENTS.API_STARTED, { port: config.port, namespace: config.temporal.namespace });
   }
 

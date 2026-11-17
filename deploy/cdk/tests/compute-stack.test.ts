@@ -39,10 +39,10 @@ describe('ComputeStack', () => {
     }
   });
 
-  it('stops the old worker before starting the new one', () => {
+  it('starts the new worker before stopping the old one', () => {
     template.hasResourceProperties('AWS::ECS::Service', {
       ServiceName: 'worker',
-      DeploymentConfiguration: Match.objectLike({ MinimumHealthyPercent: 0, MaximumPercent: 100 }),
+      DeploymentConfiguration: Match.objectLike({ MinimumHealthyPercent: 100, MaximumPercent: 200 }),
     });
   });
 
@@ -97,14 +97,24 @@ describe('ComputeStack', () => {
     expect(envOf('worker')).not.toHaveProperty('LT_OAUTH_ISSUER');
   });
 
-  it('points the worker at the API inside the VPC with only the secrets it uses', () => {
+  it('gives the worker the database, NATS and Temporal settings and no admin sign-in', () => {
     expect(envOf('worker')).toMatchObject({
       APP_ROLE: 'worker',
-      LT_URL: 'http://api.onpremcloud.local:3000',
-      LT_ADMIN_USER: 'superadmin',
+      PGSSLMODE: 'no-verify',
+      POSTGRES_DB: envOf('api').POSTGRES_DB,
+      NATS_URL: 'nats://nats.onpremcloud.local:4222',
       TEMPORAL_ADDRESS: 'us-west-2.aws.api.temporal.io:7233',
+      LT_STORAGE_BACKEND: 's3',
     });
-    expect(secretsOf('worker')).toEqual(['LT_ADMIN_PASSWORD', 'TEMPORAL_API_KEY']);
+    for (const name of ['LT_URL', 'LT_ADMIN_USER', 'PORT', 'NATS_WS_TARGET']) expect(envOf('worker')).not.toHaveProperty(name);
+    expect(secretsOf('worker')).toEqual([
+      'JWT_SECRET',
+      'NATS_TOKEN',
+      'POSTGRES_HOST',
+      'POSTGRES_PASSWORD',
+      'POSTGRES_USER',
+      'TEMPORAL_API_KEY',
+    ]);
   });
 
   it('builds one ARM64 image from the production stage', () => {

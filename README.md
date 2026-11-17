@@ -111,7 +111,7 @@ scripts/smoke-handoff.ts   npm run smoke
 deploy/cdk/                AWS stacks
 ```
 
-`APP_ROLE=both` runs the API and the Temporal worker in one process, and the workflows call Long Tail in that process as the `temporal-workflows` bot. On AWS the two run as separate services: `APP_ROLE=api` serves the dashboard and API, and `APP_ROLE=worker` runs the worker, which issues that bot a key at boot and calls the API at `LT_URL`.
+`APP_ROLE=both` runs the API and the Temporal worker in one process. On AWS the two run as separate services on the one database: `APP_ROLE=api` serves the dashboard and API, and `APP_ROLE=worker` runs the worker with Long Tail started in its process, HTTP server off. In every role the workflows call Long Tail in the worker's process as the `temporal-workflows` bot.
 
 ## Tests
 

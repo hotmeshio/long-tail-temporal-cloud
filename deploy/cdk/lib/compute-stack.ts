@@ -43,8 +43,9 @@ export interface ComputeStackProps extends cdk.StackProps {
 
 /**
  * One image, three Fargate services: the API and dashboard behind the load
- * balancer, the Temporal worker, and NATS. Tasks run on ARM64 in the public
- * subnets with public addresses.
+ * balancer, the Temporal worker, and NATS. The API and the worker each run
+ * Long Tail on the one database. Tasks run on ARM64 in the public subnets
+ * with public addresses.
  */
 export class ComputeStack extends cdk.Stack {
   public readonly alb: elbv2.ApplicationLoadBalancer;
@@ -71,19 +72,27 @@ export class ComputeStack extends cdk.Stack {
       assignPublicIp: true,
     };
 
-    const temporalEnv = {
+    // Shared by the API and the worker: Temporal, the database, NATS and storage.
+    const longTailEnv = {
       NODE_ENV: 'production',
       TEMPORAL_ADDRESS: config.temporalAddress,
       TEMPORAL_NAMESPACE: config.temporalNamespace,
       TEMPORAL_UI_URL: config.temporalUiUrl,
-      LT_ADMIN_USER: config.adminUser,
+      PGSSLMODE: 'no-verify',
+      POSTGRES_PORT: String(POSTGRES_PORT),
+      POSTGRES_DB: config.dbName,
+      NATS_URL: config.natsUrl,
       LT_STORAGE_BACKEND: 's3',
       LT_S3_BUCKET: bucket.bucketName,
       LT_S3_REGION: this.region,
     };
-    const temporalSecrets = {
+    const longTailSecrets = {
       TEMPORAL_API_KEY: ecs.Secret.fromSecretsManager(props.temporalApiKeySecret),
-      LT_ADMIN_PASSWORD: ecs.Secret.fromSecretsManager(props.adminPasswordSecret),
+      POSTGRES_HOST: ecs.Secret.fromSecretsManager(props.dbSecret, 'host'),
+      POSTGRES_USER: ecs.Secret.fromSecretsManager(props.dbSecret, 'username'),
+      POSTGRES_PASSWORD: ecs.Secret.fromSecretsManager(props.dbSecret, 'password'),
+      JWT_SECRET: ecs.Secret.fromSecretsManager(props.jwtSecret),
+      NATS_TOKEN: ecs.Secret.fromSecretsManager(props.natsTokenSecret),
     };
 
     const cluster = new ecs.Cluster(this, 'Cluster', {
@@ -167,24 +176,17 @@ export class ComputeStack extends cdk.Stack {
       image,
       portMappings: [{ containerPort: CONTAINER_PORT }],
       environment: {
-        ...temporalEnv,
+        ...longTailEnv,
         APP_ROLE: 'api',
         PORT: String(CONTAINER_PORT),
-        PGSSLMODE: 'no-verify',
-        POSTGRES_PORT: String(POSTGRES_PORT),
-        POSTGRES_DB: config.dbName,
-        NATS_URL: config.natsUrl,
+        LT_ADMIN_USER: config.adminUser,
         NATS_WS_TARGET: config.natsWsUrl,
         // OAuth sign-in for MCP clients at /mcp.
         LT_OAUTH_ISSUER: `https://${config.domainName}`,
       },
       secrets: {
-        ...temporalSecrets,
-        POSTGRES_HOST: ecs.Secret.fromSecretsManager(props.dbSecret, 'host'),
-        POSTGRES_USER: ecs.Secret.fromSecretsManager(props.dbSecret, 'username'),
-        POSTGRES_PASSWORD: ecs.Secret.fromSecretsManager(props.dbSecret, 'password'),
-        JWT_SECRET: ecs.Secret.fromSecretsManager(props.jwtSecret),
-        NATS_TOKEN: ecs.Secret.fromSecretsManager(props.natsTokenSecret),
+        ...longTailSecrets,
+        LT_ADMIN_PASSWORD: ecs.Secret.fromSecretsManager(props.adminPasswordSecret),
       },
       logging: ecs.LogDrivers.awsLogs({ logGroup: this.createLogGroup('api', logs.RetentionDays.ONE_MONTH), streamPrefix: 'api' }),
     });
@@ -222,7 +224,7 @@ export class ComputeStack extends cdk.Stack {
       conditions: [elbv2.ListenerCondition.pathPatterns(['/*'])],
     });
 
-    // --- Worker: runs the workflows, calls the API inside the VPC ---
+    // --- Worker: runs the workflows with Long Tail in its process, no HTTP server ---
 
     const workerTaskDef = new ecs.FargateTaskDefinition(this, 'WorkerTaskDef', {
       cpu: 512,
@@ -232,16 +234,14 @@ export class ComputeStack extends cdk.Stack {
 
     workerTaskDef.addContainer('worker', {
       image,
-      environment: { ...temporalEnv, APP_ROLE: 'worker', LT_URL: config.apiUrl },
-      secrets: temporalSecrets,
+      environment: { ...longTailEnv, APP_ROLE: 'worker' },
+      secrets: longTailSecrets,
       logging: ecs.LogDrivers.awsLogs({ logGroup: this.createLogGroup('worker', logs.RetentionDays.ONE_MONTH), streamPrefix: 'worker' }),
       stopTimeout: cdk.Duration.seconds(120),
     });
 
     bucket.grantReadWrite(workerTaskDef.taskRole);
 
-    // The worker issues its Long Tail key at boot, which retires the previous
-    // one, so a deploy stops the old task before starting the new one.
     const workerService = new ecs.FargateService(this, 'WorkerService', {
       cluster,
       taskDefinition: workerTaskDef,
@@ -249,8 +249,8 @@ export class ComputeStack extends cdk.Stack {
       securityGroups: [props.workerSecurityGroup],
       ...placement,
       serviceName: 'worker',
-      minHealthyPercent: 0,
-      maxHealthyPercent: 100,
+      minHealthyPercent: 100,
+      maxHealthyPercent: 200,
       circuitBreaker: { rollback: true },
       enableExecuteCommand: true,
     });
