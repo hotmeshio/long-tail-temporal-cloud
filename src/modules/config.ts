@@ -33,6 +33,8 @@ export interface AppConfig {
   port: number;
   temporal: TemporalConfig;
   admin: { user: string; password?: string; email?: string };
+  /** The password the demo people sign in with. Without one they are members who cannot sign in. */
+  demoPassword?: string;
   jwtSecret?: string;
   database: { connectionString?: string; host: string; port: number; user: string; password: string; database: string };
   nats?: { url: string; wsProxy?: string; token?: string };
@@ -57,6 +59,7 @@ export function loadConfig(env: Env = process.env): AppConfig {
       password: env.LT_ADMIN_PASSWORD || undefined,
       email: env.LT_ADMIN_EMAIL || undefined,
     },
+    demoPassword: env.LT_DEMO_PASSWORD || undefined,
     jwtSecret: env.JWT_SECRET || undefined,
     database: {
       connectionString: env.DATABASE_URL || undefined,

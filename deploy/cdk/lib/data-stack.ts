@@ -52,7 +52,7 @@ export class DataStack extends cdk.Stack {
     });
     this.dbSecret = this.database.secret!;
 
-    // --- Fabrication assets ---
+    // --- Order files ---
 
     this.bucket = new s3.Bucket(this, 'AssetsBucket', {
       bucketName: config.bucketName(this.account, this.region),

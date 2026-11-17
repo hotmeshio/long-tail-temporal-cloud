@@ -11,6 +11,7 @@ COPY package.json package-lock.json* ./
 RUN npm ci
 COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
+COPY assets ./assets
 CMD ["npx", "tsx", "watch", "src/index.ts"]
 
 FROM dev AS builder
@@ -22,5 +23,6 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 COPY --from=builder /app/build ./build
+COPY assets ./assets
 EXPOSE 3000
 CMD ["node", "build/index.js"]

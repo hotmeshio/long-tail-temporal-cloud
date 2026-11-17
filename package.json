@@ -1,8 +1,8 @@
 {
   "name": "long-tail-temporal-cloud",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
-  "description": "Long Tail on Temporal Cloud: a workflow advertises fabrication work a factory site pulls, does and resolves.",
+  "description": "Long Tail on Temporal Cloud: the Acme Eyeglass order, from prescription review through production at a factory site to the carrier pickup.",
   "license": "MIT",
   "main": "build/index.js",
   "engines": {
@@ -16,7 +16,9 @@
     "test:integration": "vitest run --config tests/integration/vitest.config.mts",
     "typecheck": "tsc --noEmit",
     "site-key": "tsx scripts/mint-site-key.ts",
-    "smoke": "tsx scripts/smoke-handoff.ts"
+    "smoke": "tsx scripts/smoke-handoff.ts",
+    "seed:story": "tsx scripts/seed-story.ts",
+    "make:pdf": "tsx scripts/make-prescription-pdf.ts"
   },
   "dependencies": {
     "@hotmeshio/long-tail": "^0.38.0",
@@ -30,6 +32,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
+    "pdf-lib": "^1.17.1",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"

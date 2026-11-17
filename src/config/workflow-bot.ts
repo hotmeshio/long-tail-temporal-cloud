@@ -3,11 +3,11 @@ import type { LongTailClient } from '@hotmeshio/long-tail-temporal/worker';
 
 import { BOT, ROLE, ROLE_TYPE } from '../modules/constants';
 
-/** The account the workflows open and close their waits as. */
+/** The account the workflows open and close their waits as. It is a member of every role an order waits in. */
 export const WORKFLOW_BOT = {
   name: BOT.WORKFLOWS,
   description: 'Opens and closes waits for the Temporal workflows',
-  roles: [{ role: ROLE.FABRICATION, type: ROLE_TYPE.MEMBER }],
+  roles: Object.values(ROLE).map((role) => ({ role, type: ROLE_TYPE.MEMBER })),
 };
 
 interface Bot { id: string; external_id: string }
