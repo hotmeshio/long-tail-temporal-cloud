@@ -1,5 +1,5 @@
-// Run one order through the handoff against a running cloud: start it, resolve
-// it as a bot, and check that the workflow ends as fabricated.
+// Run one order through the handoff against a running cloud: start it, report
+// production and the pickup scan as a bot, and check that the order ends as shipped.
 //
 //   LT_URL=https://cloud.example.com LT_ADMIN_USER=superadmin LT_ADMIN_PASSWORD=... npm run smoke
 try { require('dotenv/config'); } catch { /* env comes from the shell */ }

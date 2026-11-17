@@ -2,7 +2,7 @@ const { start, temporalProvider } = vi.hoisted(() => ({
   start: vi.fn(async (config: unknown) => ({ config })),
   temporalProvider: vi.fn((config: unknown) => ({ name: 'temporal', config })),
 }));
-vi.mock('@hotmeshio/long-tail', () => ({ start }));
+vi.mock('@hotmeshio/long-tail', () => ({ start, midnightTheme: { id: 'midnight' } }));
 vi.mock('@hotmeshio/long-tail-temporal/provider', () => ({ temporalProvider }));
 
 import { startLongTail } from '../../../src/api';
@@ -21,8 +21,9 @@ describe('startLongTail', () => {
     const config = startedWith();
     expect(config.server).toEqual({ port: 3111 });
     expect(config.durable.consoleUrl).toBe('https://cloud.temporal.io/namespaces/ns.acct/workflows/{workflowId}');
-    expect(config.roles.map((r: Started) => r.role)).toContain(ROLE.FABRICATION);
-    expect(config.workers.map((w: Started) => w.workflow)).toContain(WORKFLOW.FABRICATION_ORDER_REQUEST);
+    expect(config.roles.map((r: Started) => r.role)).toEqual(Object.values(ROLE));
+    expect(config.workers.map((w: Started) => w.workflow)).toContain(WORKFLOW.EYEGLASS_ORDER_REQUEST);
+    expect(config.branding.themes.map((t: Started) => t.id)).toEqual(['midnight']);
   });
 
   it('serves HTTP for the api role and for both', async () => {
@@ -38,7 +39,7 @@ describe('startLongTail', () => {
     expect(config.server).toEqual({ enabled: false });
     expect(config.database).toMatchObject({ host: 'pg' });
     expect(config.durable.provider).toMatchObject({ name: 'temporal' });
-    expect(config.roles.map((r: Started) => r.role)).toContain(ROLE.FABRICATION);
+    expect(config.roles.map((r: Started) => r.role)).toContain(ROLE.PRODUCTION);
   });
 
   it('uses a connection string when one is set, else the Postgres fields', async () => {

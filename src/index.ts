@@ -1,6 +1,7 @@
 try { require('dotenv/config'); } catch { /* env comes from the platform */ }
 
 import { startLongTail } from './api';
+import { seedDemoPeople } from './config/demo-people';
 import { loadConfig } from './modules/config';
 import { APP_ROLE, LOG_EVENTS, type LogEvent } from './modules/constants';
 import { createWorker } from './worker';
@@ -20,6 +21,8 @@ async function main(): Promise<void> {
   closers.push(() => lt.shutdown());
   if (config.appRole !== APP_ROLE.WORKER) {
     log(LOG_EVENTS.API_STARTED, { port: config.port, namespace: config.temporal.namespace });
+    const people = await seedDemoPeople(config.demoPassword);
+    log(LOG_EVENTS.DEMO_PEOPLE_SEEDED, people);
   }
 
   // 2. Temporal worker

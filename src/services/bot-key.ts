@@ -26,8 +26,8 @@ interface BotRow { id: string; external_id: string }
 interface KeyRow { id: string }
 
 /**
- * Sign in as an admin, find or create the bot, and mint it a key. The bot's
- * earlier keys are revoked, so each bot holds one live key.
+ * Sign in as an admin, find or create the bot with its roles, and mint it a
+ * key. The bot's earlier keys are revoked, so each bot holds one live key.
  */
 export async function issueBotKey(url: string, admin: AdminLogin, bot: BotSpec, options: IssueOptions = {}): Promise<IssuedKey> {
   // 1. Sign in, waiting for the API to come up
@@ -37,6 +37,11 @@ export async function issueBotKey(url: string, admin: AdminLogin, bot: BotSpec, 
   const listed = await requestApi<BotRow[] | { bots: BotRow[] }>(url, { method: 'GET', path: `/api/bot-accounts?search=${encodeURIComponent(bot.name)}`, token });
   const existing = rowsOf(listed, 'bots').find((row) => row.external_id === bot.name);
   const account = existing ?? await requestApi<BotRow>(url, { method: 'POST', path: '/api/bot-accounts', token, body: bot });
+  if (existing) {
+    for (const role of bot.roles) {
+      await requestApi(url, { method: 'POST', path: `/api/bot-accounts/${existing.id}/roles`, token, body: role });
+    }
+  }
 
   // 3. Mint the key, then revoke the earlier ones
   const keysPath = `/api/bot-accounts/${account.id}/api-keys`;

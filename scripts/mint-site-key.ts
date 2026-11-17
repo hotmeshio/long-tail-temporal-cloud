@@ -13,7 +13,7 @@ async function main(): Promise<void> {
   const issued = await issueBotKey(
     url,
     { username: envStr(process.env, 'LT_ADMIN_USER', 'superadmin'), password: envRequired(process.env, 'LT_ADMIN_PASSWORD') },
-    { name: BOT.SITE, description: 'A factory site: claims fabrication orders and reports them done', roles: [{ role: ROLE.FABRICATION, type: ROLE_TYPE.MEMBER }] },
+    { name: BOT.SITE, description: 'A factory site: claims production orders and reports them made', roles: [{ role: ROLE.PRODUCTION, type: ROLE_TYPE.MEMBER }] },
     { attempts: 1 },
   );
   console.log(`CLOUD_URL=${url}`);

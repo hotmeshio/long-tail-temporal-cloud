@@ -1,4 +1,4 @@
-import { start } from '@hotmeshio/long-tail';
+import { midnightTheme, start } from '@hotmeshio/long-tail';
 import { temporalProvider } from '@hotmeshio/long-tail-temporal/provider';
 
 import { roles } from '../config/roles';
@@ -33,5 +33,6 @@ export async function startLongTail(config: AppConfig) {
     durable: { provider, consoleUrl: consoleUrl(config.temporal) },
     roles,
     workers,
+    branding: { themes: [midnightTheme] },
   });
 }

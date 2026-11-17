@@ -41,7 +41,7 @@ describe('createWorker', () => {
     const options = create.mock.calls[0][0] as Options;
     expect(options.taskQueue).toBe(TASK_QUEUE);
     expect(options.workflowsPath).toMatch(/workflows/);
-    expect(options.activities.stageAssets).toBeTypeOf('function');
+    expect(options.activities.stageOrderFiles).toBeTypeOf('function');
     expect(options.activities.ltOpen).toBe(IN_PROCESS);
     expect(options.activities.ltTool).toBe(IN_PROCESS);
   });

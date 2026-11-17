@@ -4,7 +4,7 @@ import { stubFetch } from '../../helpers/fetch-stub';
 
 const URL_BASE = 'http://lt.test';
 const ADMIN = { username: 'superadmin', password: 'pw' };
-const BOT = { name: 'fabrication-site', roles: [{ role: 'fabrication', type: 'member' }] };
+const BOT = { name: 'site-1', roles: [{ role: 'production', type: 'member' }] };
 const FAST = { attempts: 3, delayMs: 1 };
 
 afterEach(() => vi.unstubAllGlobals());
@@ -27,6 +27,7 @@ describe('issueBotKey', () => {
     const { calls } = stubFetch({
       'POST /api/auth/login': { body: { token: 'jwt' } },
       'GET /api/bot-accounts': { body: [{ id: 'bot-9', external_id: BOT.name }, { id: 'bot-8', external_id: 'other' }] },
+      'POST /api/bot-accounts/bot-9/roles': { status: 201, body: {} },
       'POST /api/bot-accounts/bot-9/api-keys': { body: { id: 'k3', rawKey: 'lt_bot_3' } },
       'GET /api/bot-accounts/bot-9/api-keys': { body: { keys: [{ id: 'k1' }, { id: 'k2' }, { id: 'k3' }] } },
       'DELETE /api/bot-accounts/bot-9/api-keys/k1': { body: {} },
@@ -37,10 +38,23 @@ describe('issueBotKey', () => {
     expect(calls.some((c) => c.method === 'POST' && c.url.endsWith('/api/bot-accounts'))).toBe(false);
   });
 
+  it('makes sure an existing bot holds its roles', async () => {
+    const { calls } = stubFetch({
+      'POST /api/auth/login': { body: { token: 'jwt' } },
+      'GET /api/bot-accounts': { body: [{ id: 'bot-9', external_id: BOT.name }] },
+      'POST /api/bot-accounts/bot-9/roles': { status: 201, body: {} },
+      'POST /api/bot-accounts/bot-9/api-keys': { body: { id: 'k1', rawKey: 'lt_bot_1' } },
+      'GET /api/bot-accounts/bot-9/api-keys': { body: [{ id: 'k1' }] },
+    });
+    await issueBotKey(URL_BASE, ADMIN, BOT, FAST);
+    expect(calls.filter((c) => c.url.endsWith('/bot-9/roles')).map((c) => c.body)).toEqual(BOT.roles);
+  });
+
   it('waits for the API to come up before signing in', async () => {
     const { calls } = stubFetch({
       'POST /api/auth/login': [new TypeError('fetch failed'), { status: 503, body: {} }, { body: { token: 'jwt' } }],
       'GET /api/bot-accounts': { body: [{ id: 'bot-1', external_id: BOT.name }] },
+      'POST /api/bot-accounts/bot-1/roles': { status: 201, body: {} },
       'POST /api/bot-accounts/bot-1/api-keys': { body: { id: 'k1', rawKey: 'lt_bot_1' } },
       'GET /api/bot-accounts/bot-1/api-keys': { body: [{ id: 'k1' }] },
     });

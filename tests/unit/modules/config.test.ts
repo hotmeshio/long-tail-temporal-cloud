@@ -36,6 +36,11 @@ describe('loadConfig', () => {
     expect(config.nats).toBeUndefined();
   });
 
+  it('reads the demo people password only when it is set', () => {
+    expect(loadConfig(base).demoPassword).toBeUndefined();
+    expect(loadConfig({ ...base, LT_DEMO_PASSWORD: 'pw' }).demoPassword).toBe('pw');
+  });
+
   it('rejects an unknown role', () => {
     expect(() => loadConfig({ ...base, APP_ROLE: 'scheduler' })).toThrow('APP_ROLE must be one of');
   });

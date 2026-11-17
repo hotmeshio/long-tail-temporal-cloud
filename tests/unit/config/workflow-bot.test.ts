@@ -12,7 +12,7 @@ vi.mock('@hotmeshio/long-tail', () => ({
 import { WORKFLOW_BOT, workflowConnection } from '../../../src/config/workflow-bot';
 import { BOT, ROLE, ROLE_TYPE } from '../../../src/modules/constants';
 
-const BOT_ROLE = { role: ROLE.FABRICATION, type: ROLE_TYPE.MEMBER };
+const BOT_ROLE = { role: ROLE.PRODUCTION, type: ROLE_TYPE.MEMBER };
 const existing = { id: 'bot-7', external_id: BOT.WORKFLOWS };
 
 beforeEach(() => {
@@ -22,8 +22,9 @@ beforeEach(() => {
 });
 
 describe('WORKFLOW_BOT', () => {
-  it('is a member of the fabrication role', () => {
-    expect(WORKFLOW_BOT).toMatchObject({ name: BOT.WORKFLOWS, roles: [BOT_ROLE] });
+  it('is a member of every role an order waits in', () => {
+    expect(WORKFLOW_BOT.name).toBe(BOT.WORKFLOWS);
+    expect(WORKFLOW_BOT.roles).toEqual(Object.values(ROLE).map((role) => ({ role, type: ROLE_TYPE.MEMBER })));
   });
 });
 
@@ -34,9 +35,10 @@ describe('workflowConnection', () => {
     expect(longTail.listBots).toHaveBeenCalledWith({ search: BOT.WORKFLOWS, limit: 50 });
   });
 
-  it('reuses the bot it finds, makes sure of its role and connects as it', async () => {
+  it('reuses the bot it finds, makes sure of its roles and connects as it', async () => {
     longTail.listBots.mockResolvedValue({ status: 200, data: { bots: [{ id: 'bot-1', external_id: 'another-bot' }, existing] } });
     const connection = await workflowConnection();
+    expect(longTail.addBotRole).toHaveBeenCalledTimes(WORKFLOW_BOT.roles.length);
     expect(longTail.addBotRole).toHaveBeenCalledWith({ id: existing.id, ...BOT_ROLE });
     expect(longTail.createBot).not.toHaveBeenCalled();
     expect(longTail.createClient).toHaveBeenCalledWith({ auth: { userId: existing.id } });
@@ -67,6 +69,7 @@ describe('workflowConnection', () => {
     longTail.listBots.mockResolvedValue({ status: 200, data: [existing] });
     longTail.addBotRole.mockResolvedValue({ status: 500, error: 'database is down' });
     await expect(workflowConnection()).rejects.toThrow('add bot role: database is down');
+    expect(longTail.createClient).not.toHaveBeenCalled();
   });
 
   it('throws when the bot cannot be created, with the status when no error is given', async () => {
