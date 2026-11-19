@@ -1,6 +1,6 @@
 {
   "name": "long-tail-temporal-cloud",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Long Tail on Temporal Cloud: the Acme Eyeglass order, from prescription review through production at a factory site to the carrier pickup.",
   "license": "MIT",
@@ -21,8 +21,8 @@
     "make:pdf": "tsx scripts/make-prescription-pdf.ts"
   },
   "dependencies": {
-    "@hotmeshio/long-tail": "^0.38.0",
-    "@hotmeshio/long-tail-temporal": "^0.5.2",
+    "@hotmeshio/long-tail": "^0.39.0",
+    "@hotmeshio/long-tail-temporal": "^0.5.4",
     "@temporalio/activity": "^1.25.0",
     "@temporalio/client": "^1.25.0",
     "@temporalio/common": "^1.25.0",
